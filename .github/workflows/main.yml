@@ -371,6 +371,9 @@ jobs:
 
           # Not needed for a viewer: remove BROWSABLE from the ACTION_VIEW filter
           sed -i '/android.intent.category.BROWSABLE/d' app/src/main/AndroidManifest.xml
+          # Fix: Pattern has no replaceAll(); it must go through a Matcher
+          sed -i 's/javascriptUrlPattern\.replaceAll(/javascriptUrlPattern.matcher(content).replaceAll(/' core/viewer/src/main/kotlin/com/docuflex/core/viewer/SafeHtmlEngine.kt
+
           echo "Fixes applied."
 
       - name: Build
