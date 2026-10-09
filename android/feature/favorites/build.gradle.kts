@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.docuflex.feature.favorites"
+namespace = "com.docuflex.feature.favorites"
     compileSdk = 34
 
     defaultConfig {
