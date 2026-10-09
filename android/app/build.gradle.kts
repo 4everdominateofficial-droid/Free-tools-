@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,8 +11,8 @@ android {
 
     defaultConfig {
         applicationId = "com.docuflex"
-        minSdk = 26     // Justification: Minimum required for modern SAF, Biometrics, and native PdfRenderer
-        targetSdk = 35  // Justification: Complies with Google Play requirement for Android 15 (API 35)
+        minSdk = 26
+        targetSdk = 35
         versionCode = 2
         versionName = "1.1.0"
 
@@ -24,9 +26,9 @@ android {
         create("release") {
             // Read from local.properties or environment variables; build still works if missing
             val localPropsFile = rootProject.file("local.properties")
-            val localProps = java.util.Properties()
+            val localProps = Properties()
             if (localPropsFile.exists()) {
-                localProps.load(localPropsFile.inputStream())
+                localPropsFile.inputStream().use { localProps.load(it) }
             }
 
             val storeFilePath = System.getenv("DOCUFLEX_KEYSTORE_PATH") ?: localProps.getProperty("RELEASE_STORE_FILE")
@@ -84,17 +86,17 @@ android {
     }
 }
 
-// Security CI Check: Fails build if INTERNET permission is introduced
+// Fails the build if the INTERNET permission appears in the source manifest.
+// Note: this checks the source manifest only, not the merged one.
 tasks.register("verifyNoInternetPermission") {
-    description = "Audits merged Android manifest to ensure no INTERNET or network permissions exist."
+    description = "Checks the app source manifest for the INTERNET permission."
     group = "verification"
     doLast {
-        val manifestFile = file("src/main/AndroidManifest.xml")
-        val content = manifestFile.readText()
+        val content = file("src/main/AndroidManifest.xml").readText()
         if (content.contains("android.permission.INTERNET", ignoreCase = true)) {
-            throw GradleException("SECURITY VIOLATION: android.permission.INTERNET detected in manifest!")
+            throw GradleException("android.permission.INTERNET found in manifest!")
         }
-        println("DocuFlex Security Audit: Zero network permissions verified.")
+        println("No INTERNET permission in source manifest.")
     }
 }
 
