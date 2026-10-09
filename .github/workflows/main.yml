@@ -374,6 +374,10 @@ jobs:
           # Fix: Pattern has no replaceAll(); it must go through a Matcher
           sed -i 's/javascriptUrlPattern\.replaceAll(/javascriptUrlPattern.matcher(content).replaceAll(/' core/viewer/src/main/kotlin/com/docuflex/core/viewer/SafeHtmlEngine.kt
 
+          # Fix: lifecycleScope is an extension property; it needs an import, not a package prefix
+          sed -i 's/androidx\.lifecycle\.lifecycleScope\.launch/lifecycleScope.launch/' app/src/main/kotlin/com/docuflex/app/MainActivity.kt
+          sed -i 's/^import androidx.activity.viewModels$/import androidx.activity.viewModels\nimport androidx.lifecycle.lifecycleScope/' app/src/main/kotlin/com/docuflex/app/MainActivity.kt
+
           echo "Fixes applied."
 
       - name: Build
