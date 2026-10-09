@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DocuFlex</string>
+    <string name="open_document">Open Document</string>
+    <string name="search_placeholder">Search recent documents…</string>
+    <string name="filter_all">All Files</string>
+    <string name="filter_pdf">PDF</string>
+    <string name="filter_images">Images</string>
+    <string name="filter_text">Text &amp; CSV</string>
+    <string name="filter_office">Office</string>
+    <string name="filter_html">Web / HTML</string>
+    <string name="recent_files">Recent Files</string>
+    <string name="favorites">Favorites</string>
+    <string name="settings_title">Settings &amp; Privacy</string>
+    <string name="legal_hub_title">Legal &amp; Security</string>
+    <string name="flag_secure_title">Screen &amp; Thumbnail Protection</string>
+    <string name="flag_secure_desc">Block screenshots and hide app previews in recent tasks list.</string>
+    <string name="biometric_lock_title">Biometric Lock</string>
+    <string name="biometric_lock_desc">Require biometric or device credential to view documents.</string>
+    <string name="clear_history">Clear Recent History</string>
+    <string name="clear_favorites">Clear Favorites</string>
+    <string name="offline_badge">100% Offline</string>
+    <string name="encrypted_pdf_notice">Encrypted or password-protected PDF. Native Android engine cannot decrypt this file.</string>
+    <string name="open_external_app">Open in Compatible App</string>
+    <string name="empty_recent_title">No recent documents</string>
+    <string name="empty_recent_desc">Tap \'Open Document\' to safely pick a file via Storage Access Framework.</string>
+    <string name="about_developer">Developed by Shahbaz Khan.</string>
+</resources>

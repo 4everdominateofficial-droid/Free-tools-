@@ -1,0 +1,8 @@
+DocuFlex Security Test Document
+Classification: Unclassified / Public
+Encoding: UTF-8
+
+Line 1: Verification of plain text streaming parser.
+Line 2: Ensures memory consumption is capped at 10,000 lines.
+Line 3: Supports multi-byte unicode characters: हिन्दी, 日本語, Español.
+Line 4: DocuFlex operates 100% offline with zero network connectivity.

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">डॉक्युफ्लेक्स</string>
+    <string name="open_document">दस्तावेज़ खोलें</string>
+    <string name="search_placeholder">हाल के दस्तावेज़ खोजें…</string>
+    <string name="filter_all">सभी फ़ाइलें</string>
+    <string name="filter_pdf">पीडीएफ</string>
+    <string name="filter_images">चित्र</string>
+    <string name="filter_text">टेक्स्ट और सीएसवी</string>
+    <string name="filter_office">ऑफिस</string>
+    <string name="filter_html">वेब / एचटीएमएल</string>
+    <string name="recent_files">हाल की फ़ाइलें</string>
+    <string name="favorites">पसंदीदा</string>
+    <string name="settings_title">सेटिंग्स और गोपनीयता</string>
+    <string name="legal_hub_title">कानूनी और सुरक्षा</string>
+    <string name="flag_secure_title">स्क्रीन और थंबनेल सुरक्षा</string>
+    <string name="flag_secure_desc">स्क्रीनशॉट अवरुद्ध करें और हाल के ऐप्स में पूर्वावलोकन छिपाएं।</string>
+    <string name="biometric_lock_title">बायोमेट्रिक लॉक</string>
+    <string name="biometric_lock_desc">दस्तावेज़ देखने के लिए बायोमेट्रिक या पिन की आवश्यकता होगी।</string>
+    <string name="clear_history">हाल का इतिहास साफ़ करें</string>
+    <string name="clear_favorites">पसंदीदा साफ़ करें</string>
+    <string name="offline_badge">100% ऑफ़लाइन</string>
+    <string name="encrypted_pdf_notice">पासवर्ड से सुरक्षित पीडीएफ। मूल एंड्रॉइड इंजन इस फ़ाइल को डिक्रिप्ट नहीं कर सकता।</string>
+    <string name="open_external_app">अनुकूल ऐप में खोलें</string>
+    <string name="empty_recent_title">कोई हालिया दस्तावेज़ नहीं</string>
+    <string name="empty_recent_desc">स्टोरेज एक्सेस फ्रेमवर्क के माध्यम से सुरक्षित रूप से फ़ाइल चुनने के लिए \'दस्तावेज़ खोलें\' पर टैप करें।</string>
+    <string name="about_developer">Developed by Shahbaz Khan.</string>
+</resources>

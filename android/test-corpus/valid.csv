@@ -1,0 +1,6 @@
+TransactionID,Date,Category,Description,AmountUSD,Status
+TXN-1001,2026-03-01,Hardware,"Server Rack, 42U Enclosure",1450.00,Approved
+TXN-1002,2026-03-02,Software,"Security Audit Tool, Annual",299.99,Approved
+TXN-1003,2026-03-03,Office,"Ergonomic Chairs, Mesh",780.50,Pending
+TXN-1004,2026-03-04,Travel,"Train Tickets, Express Line",124.00,Approved
+TXN-1005,2026-03-05,Supplies,"Paper Reams, Recycled",45.20,Settled

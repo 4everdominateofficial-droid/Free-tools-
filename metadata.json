@@ -1,0 +1,6 @@
+{
+  "name": "DocuFlex — Secure All-in-One Document Viewer",
+  "description": "Production-minded, privacy-first, offline Android document viewer with native Kotlin/Compose architecture, SAF security, and comprehensive verification suite.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

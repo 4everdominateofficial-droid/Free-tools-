@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --m3-primary: #0b57d0;
+    --m3-on-primary: #ffffff;
+    --m3-primary-container: #d3e3fd;
+    --m3-on-primary-container: #041e49;
+    --m3-surface: #f8fafd;
+    --m3-surface-container: #ffffff;
+    --m3-surface-container-high: #edf2fa;
+    --m3-outline: #c4c7c5;
+    --m3-outline-variant: #e0e3e7;
+  }
+
+  .dark {
+    --m3-primary: #a8c7fa;
+    --m3-on-primary: #062e6f;
+    --m3-primary-container: #0842a0;
+    --m3-on-primary-container: #d3e3fd;
+    --m3-surface: #10141d;
+    --m3-surface-container: #18202d;
+    --m3-surface-container-high: #222b3a;
+    --m3-outline: #8e918f;
+    --m3-outline-variant: #283344;
+  }
+}
+
+/* Material Design 3 ripple and smooth interaction */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 165, 185, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 165, 185, 0.5);
+}
