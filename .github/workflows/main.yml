@@ -19,372 +19,115 @@ jobs:
 
       - name: Apply build fixes
         run: |
-          set -e
-          cd android
+          python3 - <<'PYEND'
+          import re, pathlib
+          A = pathlib.Path("android")
 
-          cat > settings.gradle.kts <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
+          def rd(p): return (A / p).read_text()
+          def wr(p, s): (A / p).write_text(s)
+          def edit(p, fn):
+              s = rd(p); n = fn(s)
+              if n != s: wr(p, n)
+
+          def ins_after(s, anchor, text):
+              i = s.index(anchor) + len(anchor)
+              return s[:i] + "\n" + text + s[i:]
+
+          # settings: plugin + dependency repositories
+          def settings(s):
+              if "pluginManagement" in s: return s
+              head = ('pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\n\n'
+                      'dependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\n\n')
+              return head + s
+          edit("settings.gradle.kts", settings)
+
+          # version catalog: add only missing keys
+          def toml(s):
+              add = {
+                "[versions]": [("ksp", 'ksp = "1.9.23-1.0.20"'), ("fragment", 'fragment = "1.7.1"')],
+                "[libraries]": [
+                  ("androidx-lifecycle-viewmodel-ktx", 'androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }'),
+                  ("androidx-lifecycle-viewmodel-compose", 'androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }'),
+                  ("androidx-lifecycle-viewmodel-savedstate", 'androidx-lifecycle-viewmodel-savedstate = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "lifecycleRuntimeKtx" }'),
+                  ("androidx-lifecycle-runtime-compose", 'androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }'),
+                  ("androidx-fragment-ktx", 'androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }')],
+                "[plugins]": [("ksp", 'ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }')],
               }
-          }
+              for sec, items in add.items():
+                  for key, line in items:
+                      i = s.index(sec) + len(sec)
+                      j = s.find("\n[", i)
+                      body = s[i:] if j < 0 else s[i:j]
+                      if not re.search(r"^" + re.escape(key) + r"\s*=", body, re.M):
+                          s = ins_after(s, sec, line)
+              return s
+          edit("gradle/libs.versions.toml", toml)
 
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
+          edit("build.gradle.kts", lambda s: s if "libs.plugins.ksp" in s else ins_after(s, "alias(libs.plugins.kotlin.android) apply false", "    alias(libs.plugins.ksp) apply false"))
 
-          rootProject.name = "DocuFlex"
-          include(":app")
-          include(":core:model")
-          include(":core:security")
-          include(":core:data")
-          include(":core:theme")
-          include(":core:viewer")
-          include(":feature:home")
-          include(":feature:recents")
-          include(":feature:favorites")
-          include(":feature:viewer")
-          include(":feature:settings")
-          include(":feature:legal")
-          EOF
+          def data(s):
+              if "libs.plugins.ksp" not in s: s = ins_after(s, "alias(libs.plugins.kotlin.android)", "    alias(libs.plugins.ksp)")
+              if "ksp(" not in s: s = ins_after(s, "dependencies {", "    ksp(libs.androidx.room.compiler)")
+              return s
+          edit("core/data/build.gradle.kts", data)
 
-          cat > gradle/libs.versions.toml <<'EOF'
-          [versions]
-          agp = "8.3.2"
-          kotlin = "1.9.23"
-          ksp = "1.9.23-1.0.20"
-          coreKtx = "1.13.1"
-          lifecycleRuntimeKtx = "2.8.2"
-          activityCompose = "1.9.0"
-          fragment = "1.7.1"
-          composeBom = "2024.06.00"
-          composeNavigation = "2.7.7"
-          material3 = "1.2.1"
-          biometric = "1.2.0-alpha05"
-          coroutines = "1.8.1"
-          dataStore = "1.1.1"
-          room = "2.6.1"
-          junit = "4.13.2"
-          androidxTestExtJunit = "1.1.5"
-          espressoCore = "3.5.1"
+          def app(s):
+              s = s.replace("java.util.Properties()", "Properties()")
+              if "import java.util.Properties" not in s: s = "import java.util.Properties\n\n" + s
+              return s
+          edit("app/build.gradle.kts", app)
 
-          [libraries]
-          androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-          androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
-          androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
-          androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
-          androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
-          androidx-lifecycle-viewmodel-savedstate = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "lifecycleRuntimeKtx" }
-          androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-          androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
-          androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-          androidx-ui = { group = "androidx.compose.ui", name = "ui" }
-          androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-          androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-          androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-          androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-          androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
-          androidx-material3-windowsizeclass = { group = "androidx.compose.material3", name = "material3-window-size-class" }
-          androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }
-          androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
-          androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore" }
-          androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-          androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-          androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-          kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
-          kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-          junit = { group = "junit", name = "junit", version.ref = "junit" }
-          androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
-          androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+          for m in ["core/model", "core/security", "core/theme", "core/viewer", "core/data"] + ["feature/" + f for f in ["home", "recents", "favorites", "viewer", "settings", "legal"]]:
+              edit(m + "/build.gradle.kts", lambda s: s.replace("compileSdk = 34", "compileSdk = 35"))
 
-          [plugins]
-          android-application = { id = "com.android.application", version.ref = "agp" }
-          android-library = { id = "com.android.library", version.ref = "agp" }
-          kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-          ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-          EOF
+          FEATURE_DEPS = [
+           'implementation(project(":core:model"))', 'implementation(project(":core:security"))', 'implementation(project(":core:data"))',
+           'implementation(project(":core:viewer"))', 'implementation(project(":core:theme"))',
+           'implementation(libs.androidx.core.ktx)', 'implementation(libs.androidx.lifecycle.runtime.ktx)',
+           'implementation(libs.androidx.lifecycle.viewmodel.ktx)', 'implementation(libs.androidx.lifecycle.viewmodel.compose)',
+           'implementation(libs.androidx.lifecycle.viewmodel.savedstate)', 'implementation(libs.androidx.lifecycle.runtime.compose)',
+           'implementation(libs.androidx.activity.compose)', 'implementation(libs.kotlinx.coroutines.android)',
+           'implementation(platform(libs.androidx.compose.bom))', 'implementation(libs.androidx.ui)', 'implementation(libs.androidx.ui.graphics)',
+           'implementation(libs.androidx.material3)', 'implementation(libs.androidx.material3.windowsizeclass)',
+           'implementation(libs.androidx.material.icons.extended)', 'implementation(libs.androidx.navigation.compose)']
+          def feature(s):
+              if "compose = true" not in s:
+                  s = ins_after(s, "android {", '    buildFeatures {\n        compose = true\n    }\n    composeOptions {\n        kotlinCompilerExtensionVersion = "1.5.11"\n    }')
+              for d in FEATURE_DEPS:
+                  if d not in s: s = ins_after(s, "dependencies {", "    " + d)
+              return s
+          for f in ["home", "recents", "favorites", "viewer", "settings", "legal"]:
+              edit("feature/" + f + "/build.gradle.kts", feature)
 
-          cat > build.gradle.kts <<'EOF'
-          plugins {
-              alias(libs.plugins.android.application) apply false
-              alias(libs.plugins.android.library) apply false
-              alias(libs.plugins.kotlin.android) apply false
-              alias(libs.plugins.ksp) apply false
-          }
+          def need(path, dep):
+              edit(path, lambda s: s if dep in s else ins_after(s, "dependencies {", "    " + dep))
+          need("core/viewer/build.gradle.kts", "testImplementation(libs.junit)")
+          need("core/security/build.gradle.kts", "implementation(libs.androidx.fragment.ktx)")
 
-          tasks.register("clean", Delete::class) {
-              delete(rootProject.layout.buildDirectory)
-          }
-          EOF
+          p = A / "gradle.properties"
+          if "suppressUnsupportedCompileSdk" not in p.read_text():
+              p.write_text(p.read_text().rstrip("\n") + "\nandroid.suppressUnsupportedCompileSdk=35\n")
 
-          grep -q suppressUnsupportedCompileSdk gradle.properties || echo "android.suppressUnsupportedCompileSdk=35" >> gradle.properties
+          edit("app/src/main/AndroidManifest.xml", lambda s: "".join(l for l in s.splitlines(True) if "category.BROWSABLE" not in l))
 
-          cat > core/data/build.gradle.kts <<'EOF'
-          plugins {
-              alias(libs.plugins.android.library)
-              alias(libs.plugins.kotlin.android)
-              alias(libs.plugins.ksp)
-          }
+          V = "core/viewer/src/main/kotlin/com/docuflex/core/viewer/"
+          edit(V + "SafeHtmlEngine.kt", lambda s: s.replace("javascriptUrlPattern.replaceAll(", "javascriptUrlPattern.matcher(content).replaceAll("))
 
-          android {
-              namespace = "com.docuflex.core.data"
-              compileSdk = 35
+          def img(s):
+              s = s.replace("(halfWidth / inSampleSize) >= maxTargetDimension", "(origWidth / inSampleSize) > maxTargetDimension")
+              return s.replace("(halfHeight / inSampleSize) >= maxTargetDimension", "(origHeight / inSampleSize) > maxTargetDimension")
+          edit(V + "ImageEngine.kt", img)
 
-              defaultConfig {
-                  minSdk = 26
-                  testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-              }
+          M = "app/src/main/kotlin/com/docuflex/app/MainActivity.kt"
+          def main(s):
+              s = s.replace("androidx.lifecycle.lifecycleScope.launch", "lifecycleScope.launch")
+              if "import androidx.lifecycle.lifecycleScope" not in s:
+                  s = s.replace("import androidx.activity.viewModels\n", "import androidx.activity.viewModels\nimport androidx.lifecycle.lifecycleScope\n", 1)
+              return s
+          edit(M, main)
 
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
-          }
-
-          dependencies {
-              implementation(project(":core:model"))
-              implementation(libs.androidx.core.ktx)
-              implementation(libs.androidx.room.runtime)
-              implementation(libs.androidx.room.ktx)
-              ksp(libs.androidx.room.compiler)
-              implementation(libs.androidx.datastore.preferences)
-              implementation(libs.kotlinx.coroutines.android)
-
-              testImplementation(libs.junit)
-          }
-          EOF
-
-          cat > app/build.gradle.kts <<'EOF'
-          import java.util.Properties
-
-          plugins {
-              alias(libs.plugins.android.application)
-              alias(libs.plugins.kotlin.android)
-          }
-
-          android {
-              namespace = "com.docuflex"
-              compileSdk = 35
-
-              defaultConfig {
-                  applicationId = "com.docuflex"
-                  minSdk = 26
-                  targetSdk = 35
-                  versionCode = 2
-                  versionName = "1.1.0"
-
-                  testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                  vectorDrawables {
-                      useSupportLibrary = true
-                  }
-              }
-
-              signingConfigs {
-                  create("release") {
-                      val localPropsFile = rootProject.file("local.properties")
-                      val localProps = Properties()
-                      if (localPropsFile.exists()) {
-                          localPropsFile.inputStream().use { localProps.load(it) }
-                      }
-
-                      val storeFilePath = System.getenv("DOCUFLEX_KEYSTORE_PATH") ?: localProps.getProperty("RELEASE_STORE_FILE")
-                      val storePass = System.getenv("DOCUFLEX_KEYSTORE_PASSWORD") ?: localProps.getProperty("RELEASE_STORE_PASSWORD")
-                      val keyAl = System.getenv("DOCUFLEX_KEY_ALIAS") ?: localProps.getProperty("RELEASE_KEY_ALIAS")
-                      val keyPass = System.getenv("DOCUFLEX_KEY_PASSWORD") ?: localProps.getProperty("RELEASE_KEY_PASSWORD")
-
-                      if (storeFilePath != null && file(storeFilePath).exists()) {
-                          storeFile = file(storeFilePath)
-                          storePassword = storePass
-                          keyAlias = keyAl
-                          keyPassword = keyPass
-                      }
-                  }
-              }
-
-              buildTypes {
-                  release {
-                      isMinifyEnabled = true
-                      isShrinkResources = true
-                      proguardFiles(
-                          getDefaultProguardFile("proguard-android-optimize.txt"),
-                          "proguard-rules.pro"
-                      )
-                      isDebuggable = false
-                      signingConfig = signingConfigs.getByName("release")
-                  }
-                  debug {
-                      isDebuggable = true
-                      applicationIdSuffix = ".debug"
-                  }
-              }
-
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
-
-              buildFeatures {
-                  compose = true
-              }
-
-              composeOptions {
-                  kotlinCompilerExtensionVersion = "1.5.11"
-              }
-
-              packaging {
-                  resources {
-                      excludes += "/META-INF/{AL2.0,LGPL2.1}"
-                  }
-              }
-          }
-
-          tasks.register("verifyNoInternetPermission") {
-              description = "Checks the app source manifest for the INTERNET permission (source manifest only, not merged)."
-              group = "verification"
-              doLast {
-                  val content = file("src/main/AndroidManifest.xml").readText()
-                  if (content.contains("android.permission.INTERNET", ignoreCase = true)) {
-                      throw GradleException("android.permission.INTERNET found in manifest!")
-                  }
-                  println("No INTERNET permission in source manifest.")
-              }
-          }
-
-          dependencies {
-              implementation(project(":core:model"))
-              implementation(project(":core:security"))
-              implementation(project(":core:data"))
-              implementation(project(":core:theme"))
-              implementation(project(":core:viewer"))
-              implementation(project(":feature:home"))
-              implementation(project(":feature:recents"))
-              implementation(project(":feature:favorites"))
-              implementation(project(":feature:viewer"))
-              implementation(project(":feature:settings"))
-              implementation(project(":feature:legal"))
-
-              implementation(libs.androidx.core.ktx)
-              implementation(libs.androidx.lifecycle.runtime.ktx)
-              implementation(libs.androidx.lifecycle.viewmodel.ktx)
-              implementation(libs.androidx.lifecycle.viewmodel.compose)
-              implementation(libs.androidx.lifecycle.runtime.compose)
-              implementation(libs.androidx.activity.compose)
-              implementation(libs.androidx.fragment.ktx)
-              implementation(libs.kotlinx.coroutines.android)
-              implementation(platform(libs.androidx.compose.bom))
-              implementation(libs.androidx.ui)
-              implementation(libs.androidx.ui.graphics)
-              implementation(libs.androidx.material3)
-              implementation(libs.androidx.material3.windowsizeclass)
-              implementation(libs.androidx.material.icons.extended)
-              implementation(libs.androidx.navigation.compose)
-              implementation(libs.androidx.biometric)
-              implementation(libs.androidx.datastore.preferences)
-
-              testImplementation(libs.junit)
-              androidTestImplementation(libs.androidx.test.ext.junit)
-              androidTestImplementation(libs.androidx.espresso.core)
-              androidTestImplementation(platform(libs.androidx.compose.bom))
-          }
-          EOF
-
-          mk_feature() {
-          cat > "feature/$1/build.gradle.kts" <<EOF
-          plugins {
-              alias(libs.plugins.android.library)
-              alias(libs.plugins.kotlin.android)
-          }
-
-          android {
-              namespace = "com.docuflex.feature.$1"
-              compileSdk = 35
-
-              defaultConfig {
-                  minSdk = 26
-              }
-
-              buildFeatures {
-                  compose = true
-              }
-
-              composeOptions {
-                  kotlinCompilerExtensionVersion = "1.5.11"
-              }
-
-              compileOptions {
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
-
-              kotlinOptions {
-                  jvmTarget = "17"
-              }
-          }
-
-          dependencies {
-              implementation(project(":core:model"))
-              implementation(project(":core:security"))
-              implementation(project(":core:data"))
-              implementation(project(":core:viewer"))
-              implementation(project(":core:theme"))
-
-              implementation(libs.androidx.core.ktx)
-              implementation(libs.androidx.lifecycle.runtime.ktx)
-              implementation(libs.androidx.lifecycle.viewmodel.ktx)
-              implementation(libs.androidx.lifecycle.viewmodel.compose)
-              implementation(libs.androidx.lifecycle.viewmodel.savedstate)
-              implementation(libs.androidx.lifecycle.runtime.compose)
-              implementation(libs.androidx.activity.compose)
-              implementation(libs.kotlinx.coroutines.android)
-              implementation(platform(libs.androidx.compose.bom))
-              implementation(libs.androidx.ui)
-              implementation(libs.androidx.ui.graphics)
-              implementation(libs.androidx.material3)
-              implementation(libs.androidx.material3.windowsizeclass)
-              implementation(libs.androidx.material.icons.extended)
-              implementation(libs.androidx.navigation.compose)
-          }
-          EOF
-          }
-          for f in home recents favorites viewer settings legal; do mk_feature "$f"; done
-
-          # remaining modules: compileSdk 35, junit for core:viewer, fragment for core:security
-          for f in core/model core/security core/theme core/viewer; do
-            sed -i 's/compileSdk = 34/compileSdk = 35/' "$f/build.gradle.kts"
-          done
-          sed -i '/^dependencies {/a\    testImplementation(libs.junit)' core/viewer/build.gradle.kts
-          sed -i '/^dependencies {/a\    implementation(libs.androidx.fragment.ktx)' core/security/build.gradle.kts
-
-          # Not needed for a viewer: remove BROWSABLE from the ACTION_VIEW filter
-          sed -i '/android.intent.category.BROWSABLE/d' app/src/main/AndroidManifest.xml
-          # Fix: Pattern has no replaceAll(); it must go through a Matcher
-          sed -i 's/javascriptUrlPattern\.replaceAll(/javascriptUrlPattern.matcher(content).replaceAll(/' core/viewer/src/main/kotlin/com/docuflex/core/viewer/SafeHtmlEngine.kt
-
-          # Fix: lifecycleScope is an extension property; it needs an import, not a package prefix
-          sed -i 's/androidx\.lifecycle\.lifecycleScope\.launch/lifecycleScope.launch/' app/src/main/kotlin/com/docuflex/app/MainActivity.kt
-          sed -i 's/^import androidx.activity.viewModels$/import androidx.activity.viewModels\nimport androidx.lifecycle.lifecycleScope/' app/src/main/kotlin/com/docuflex/app/MainActivity.kt
-
-          # Fix images: correct downsampling (big phone photos were decoded at full size) + pinch zoom
-          sed -i 's/while ((halfWidth \/ inSampleSize) >= maxTargetDimension ||/while ((origWidth \/ inSampleSize) > maxTargetDimension ||/' core/viewer/src/main/kotlin/com/docuflex/core/viewer/ImageEngine.kt
-          sed -i 's/(halfHeight \/ inSampleSize) >= maxTargetDimension/(origHeight \/ inSampleSize) > maxTargetDimension/' core/viewer/src/main/kotlin/com/docuflex/core/viewer/ImageEngine.kt
-          grep -q "origWidth / inSampleSize" core/viewer/src/main/kotlin/com/docuflex/core/viewer/ImageEngine.kt || { echo "ImageEngine patch failed"; exit 1; }
-
-          cat > feature/viewer/src/main/kotlin/com/docuflex/feature/viewer/ZoomableImage.kt <<'EOF'
-          package com.docuflex.feature.viewer
+          VW = "feature/viewer/src/main/kotlin/com/docuflex/feature/viewer/"
+          wr(VW + "ZoomableImage.kt", '''package com.docuflex.feature.viewer
 
           import android.graphics.Bitmap
           import androidx.compose.foundation.Image
@@ -406,7 +149,6 @@ jobs:
               var scale by remember { mutableFloatStateOf(1f) }
               var offsetX by remember { mutableFloatStateOf(0f) }
               var offsetY by remember { mutableFloatStateOf(0f) }
-
               Image(
                   bitmap = bitmap.asImageBitmap(),
                   contentDescription = "Document image preview",
@@ -425,18 +167,38 @@ jobs:
                               }
                           }
                       }
-                      .graphicsLayer(
-                          scaleX = scale,
-                          scaleY = scale,
-                          translationX = offsetX,
-                          translationY = offsetY
-                      )
+                      .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, translationY = offsetY)
               )
           }
-          EOF
+          ''')
+          def screen(s):
+              pat = re.compile(r"Image\(\s*bitmap = state\.bitmap\.asImageBitmap\(\),.*?contentScale = ContentScale\.Fit\s*\)", re.S)
+              return pat.sub("ZoomableImage(state.bitmap)", s, count=1)
+          edit(VW + "DocumentViewerScreen.kt", screen)
+          print("All fixes applied")
+          PYEND
 
-          python3 - <<'PY2'
-          p = "feature/viewer/src/main/kotlin/com/docuflex/feature/viewer/DocumentViewerScreen.kt"
-          s = open(p).read()
-          old = """                        Image(
-                                      bitmap = sta
+      - name: Build
+        working-directory: android
+        run: |
+          set +e
+          gradle assembleDebug --dependency-verification=off --console=plain > build.log 2>&1
+          code=$?
+          echo "=== WHAT WENT WRONG ==="
+          grep -n -A8 "What went wrong" build.log | head -40 || true
+          echo "=== KOTLIN ERRORS ==="
+          grep -n "^e: " build.log | sed 's#file:///home/runner/work/[^/]*/[^/]*/android/##' | head -80 || true
+          exit $code
+
+      - name: Upload full log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: android/build.log
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: docuflex-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
